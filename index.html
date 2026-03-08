@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Free online image editor. Resize, compress, convert, and crop images locally in your browser.">
+    <title>ImageMaster Pro | Secure Editor</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. MODERN THEME VARIABLES --- */
+        :root {
+            --primary: #6366f1; /* Indigo 500 */
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-glass: rgba(255, 255, 255, 0.7);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: rgba(226, 232, 240, 0.8);
+            --radius: 16px;
+            --shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+        }
+
+        .dark-mode {
+            --primary: #818cf8;
+            --primary-glow: rgba(129, 140, 248, 0.3);
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            --surface: rgba(30, 41, 59, 0.95);
+            --surface-glass: rgba(30, 41, 59, 0.6);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(51, 65, 85, 0.8);
+            --shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        /* --- 2. GLOBAL RESET & ANIMATIONS --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: color 0.3s;
+        }
+
+        /* Background Mesh Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%);
+            opacity: 0.4;
+            z-index: -1;
+            animation: breathe 10s infinite alternate;
+        }
+        @keyframes breathe { 0% { transform: scale(0.8); } 100% { transform: scale(1.2); } }
+
+        /* --- 3. LAYOUT --- */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+        }
+
+        .logo { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+        .logo span { color: var(--primary); filter: drop-shadow(0 0 10px var(--primary-glow)); }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 4. BUTTONS & INPUTS --- */
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            letter-spacing: 0.3px;
+        }
+        .btn:active { transform: scale(0.96); }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            width: 100%;
+        }
+        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 6px 20px var(--primary-glow); }
+
+        .btn-secondary { background: transparent; border: 2px solid var(--border); color: var(--text-main); width: 100%; }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+
+        input, select {
+            width: 100%; padding: 0.85rem; border-radius: 10px;
+            border: 2px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+        /* --- 5. UPLOAD ZONE --- */
+        .upload-area {
+            border: 3px dashed var(--border);
+            border-radius: 20px;
+            padding: 5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateY(-4px);
+        }
+        .upload-icon { font-size: 3.5rem; margin-bottom: 1.5rem; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1)); }
+        
+        /* Features Grid */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+        .feature-item { text-align: left; padding: 1.5rem; background: var(--surface-glass); border-radius: 16px; border: 1px solid var(--border); }
+        .feature-icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+
+        /* --- 6. EDITOR WORKSPACE --- */
+        .nav-container { 
+            background: var(--surface); 
+            padding: 0.5rem; 
+            border-radius: 16px; 
+            margin-bottom: 1.5rem; 
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        .nav-pills { display: flex; gap: 0.5rem; min-width: max-content; }
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
+
+        .workspace {
+            position: relative;
+            min-height: 300px;
+            background: repeating-conic-gradient(#cbd5e1 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 2px solid var(--border);
+        }
+        .dark-mode .workspace { background: repeating-conic-gradient(#334155 0% 25%, transparent 0% 50%) 50% / 20px 20px; }
+        canvas { max-width: 100%; max-height: 60vh; object-fit: contain; }
+
+        /* --- 7. FOOTER --- */
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Loaders & Toasts */
+        .loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; backdrop-filter: blur(8px); }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; color: white; padding: 14px 28px; border-radius: 50px; font-weight: 500; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10000; box-shadow: 0 15px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .toast.success { background: #064e3b; border-color: #10b981; }
+        .toast.error { background: #7f1d1d; border-color: #ef4444; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            h1 { font-size: 1.5rem; }
+            .btn-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loader-overlay hidden">
+        <div class="spinner"></div>
+        <p style="font-weight: 500; letter-spacing: 1px;">PROCESSING...</p>
+    </div>
+
+    <div id="toast" class="toast"><span>Notification</span></div>
+
+    <div class="container">
+        <header class="fade-in">
+            <div class="logo">
+                <span style="font-size: 1.8rem;">✨</span> ImageMaster <span style="color: var(--text-main); opacity: 0.7; font-weight: 300;">Pro</span>
+            </div>
+            <button class="btn" id="themeToggle" style="background: var(--bg); padding: 8px 12px; font-size: 1.2rem;">🌙</button>
+        </header>
+
+        <main id="view-upload" class="fade-in">
+            <div class="upload-area" id="dropZone">
+                <span class="upload-icon">☁️</span>
+                <div class="upload-text">
+                    <h2 style="margin-bottom: 0.5rem; font-weight: 700;">Drop your image here</h2>
+                    <p style="color: var(--text-muted);">Supports JPG, PNG, WEBP (Max 25MB)</p>
+                    <button class="btn btn-primary" style="margin-top: 1.5rem; width: auto; padding: 0.8rem 2rem;">Select File</button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <span class="feature-icon">🔒</span>
+                    <h4>100% Secure</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Files stay on your device. Zero server uploads.</p>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <h4>Lightning Fast</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Powered by WebAssembly & Canvas API.</p>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">💎</span>
+                    <h4>High Quality</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Smart compression algorithms preserve detail.</p>
+                </div>
+            </div>
+        </main>
+
+        <main id="view-editor" class="hidden fade-in">
+            
+            <div class="nav-container">
+                <div class="nav-pills" id="toolNav">
+                    <button class="nav-item active" data-tool="info">📊 Info</button>
+                    <button class="nav-item" data-tool="resize">📐 Resize</button>
+                    <button class="nav-item" data-tool="compress">🗜️ Compress</button>
+                    <button class="nav-item" data-tool="convert">🔄 Convert</button>
+                    <button class="nav-item" data-tool="crop">✂️ Crop</button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 1rem;">
+                <div class="workspace">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+                <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Original: <span id="lblOrigDims">0x0</span></span>
+                    <button class="btn" id="closeBtn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: auto; padding: 0.5rem 1rem; font-size: 0.85rem;">✕ Close</button>
+                </div>
+            </div>
+
+            <div id="toolsContainer">
+                
+                <div id="panel-info" class="tool-panel card">
+                    <h3 style="margin-bottom: 1.5rem;">📁 Image Properties</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Name</label><input type="text" id="metaName" readonly></div>
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Type</label><input type="text" id="metaType" readonly></div>
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Size</label><input type="text" id="metaSize" readonly></div>
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Dimensions</label><input type="text" id="metaDims" readonly></div>
+                    </div>
+                </div>
+
+                <div id="panel-resize" class="tool-panel card hidden">
+                    <h3 style="margin-bottom: 1.5rem;">📐 Resize Dimensions</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Width</label><input type="number" id="rzW"></div>
+                        <div><label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Height</label><input type="number" id="rzH"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:600; margin-bottom:0.5rem;">
+                            <span>Scale</span>
+                            <span id="rzScaleVal" style="color:var(--primary);">100%</span>
+                        </label>
+                        <input type="range" id="rzScale" min="1" max="200" value="100" style="width:100%; height:6px; accent-color:var(--primary);">
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <input type="checkbox" id="rzLock" checked style="width:auto; margin-right:8px;">
+                        <label for="rzLock" style="display:inline; font-size:0.9rem;">Lock Aspect Ratio</label>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="App.preview('resize')">Preview</button>
+                        <button class="btn btn-primary" onclick="App.download('resize')">Download</button>
+                    </div>
+                </div>
+
+                <div id="panel-compress" class="tool-panel card hidden">
+                    <h3 style="margin-bottom: 1.5rem;">🗜️ Smart Compression</h3>
+                    
+                    <div style="background: var(--bg-gradient); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
+                        <div style="text-align:center;">
+                            <small style="color:var(--text-muted);">Original</small>
+                            <div id="cmpOrigSize" style="font-weight:700; font-size:1.1rem;">-</div>
+                        </div>
+                        <div style="color:var(--text-muted);">➜</div>
+                        <div style="text-align:center;">
+                            <small style="color:var(--primary);">Estimated</small>
+                            <div id="cmpEstSize" style="font-weight:700; font-size:1.1rem; color:var(--primary);">...</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:600; margin-bottom:0.5rem;">
+                            <span>Quality</span>
+                            <span id="cmpVal" style="color:var(--primary);">80%</span>
+                        </label>
+                        <input type="range" id="cmpRange" min="5" max="100" value="80" style="width:100%; height:6px; accent-color:var(--primary);">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="App.preview('compress')">Preview</button>
+                        <button class="btn btn-primary" onclick="App.download('compress')">Compress & Save</button>
+                    </div>
+                </div>
+
+                <div id="panel-convert" class="tool-panel card hidden">
+                    <h3 style="margin-bottom: 1.5rem;">🔄 Format Converter</h3>
+                    <div style="margin-bottom: 2rem;">
+                        <label style="font-size:0.9rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Target Format</label>
+                        <select id="cvtFormat" style="padding:1rem;">
+                            <option value="image/jpeg">JPG (Good for Photos)</option>
+                            <option value="image/png">PNG (High Quality/Transparency)</option>
+                            <option value="image/webp">WEBP (Best for Web)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="App.download('convert')">Convert Now</button>
+                </div>
+
+                <div id="panel-crop" class="tool-panel card hidden">
+                    <h3 style="margin-bottom: 1rem;">✂️ Crop Tool</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem; background:rgba(99,102,241,0.1); padding:10px; border-radius:8px; border-left: 3px solid var(--primary);">
+                        👆 Draw a rectangle on the image above to select the area.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 2rem;">
+                        <div style="background:var(--bg-gradient); padding:1rem; border-radius:8px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--text-muted);">Width</small>
+                            <div id="crpW" style="font-weight:700;">0 px</div>
+                        </div>
+                        <div style="background:var(--bg-gradient); padding:1rem; border-radius:8px; text-align:center; border:1px solid var(--border);">
+                            <small style="color:var(--text-muted);">Height</small>
+                            <div id="crpH" style="font-weight:700;">0 px</div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="App.preview('crop')">Preview Crop</button>
+                        <button class="btn btn-primary" onclick="App.download('crop')">Crop & Save</button>
+                    </div>
+                </div>
+
+            </div> <div id="previewSection" class="card hidden" style="border: 2px solid var(--primary); animation: slideUp 0.3s ease;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                    <h4 style="color:var(--primary);">Preview Result</h4>
+                    <button class="btn" onclick="document.getElementById('previewSection').classList.add('hidden')" style="padding:5px 10px; font-size:0.8rem;">Close</button>
+                </div>
+                <div style="text-align:center; background: #e2e8f0; border-radius:8px; overflow:hidden;">
+                    <img id="previewImg" style="max-width:100%; display:block; margin:0 auto;" alt="Preview">
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 ImageMaster Pro. Serverless Architecture.</p>
+    </footer>
+
+    <script>
+        const State = { file: null, img: null, origW: 0, origH: 0, fileName: '', crop: { active: false, x: 0, y: 0, w: 0, h: 0 } };
+        const UI = {
+            viewUpload: document.getElementById('view-upload'),
+            viewEditor: document.getElementById('view-editor'),
+            dropZone: document.getElementById('dropZone'),
+            fileInput: document.getElementById('fileInput'),
+            canvas: document.getElementById('mainCanvas'),
+            ctx: document.getElementById('mainCanvas').getContext('2d'),
+            previewSect: document.getElementById('previewSection'),
+            previewImg: document.getElementById('previewImg'),
+            loader: document.getElementById('loader'),
+            toast: document.getElementById('toast'),
+            rzW: document.getElementById('rzW'),
+            rzH: document.getElementById('rzH'),
+            rzScale: document.getElementById('rzScale'),
+            rzLock: document.getElementById('rzLock'),
+            cmpRange: document.getElementById('cmpRange'),
+            cmpVal: document.getElementById('cmpVal'),
+            cmpEst: document.getElementById('cmpEstSize')
+        };
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const btn = document.getElementById('themeToggle');
+                btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            });
+
+            UI.dropZone.addEventListener('click', () => UI.fileInput.click());
+            UI.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+                UI.dropZone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); }, false);
+            });
+            
+            UI.dropZone.addEventListener('dragover', () => UI.dropZone.classList.add('dragover'));
+            UI.dropZone.addEventListener('dragleave', () => UI.dropZone.classList.remove('dragover'));
+            UI.dropZone.addEventListener('drop', (e) => {
+                UI.dropZone.classList.remove('dragover');
+                handleFile(e.dataTransfer.files[0]);
+            });
+
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', () => switchTool(btn));
+            });
+
+            document.getElementById('closeBtn').addEventListener('click', () => location.reload()); // Simple reload to clear
+            setupCropListeners();
+        });
+
+        // --- FILE HANDLING ---
+        function handleFile(file) {
+            if (!file || !file.type.match('image.*')) return showToast('Please select a valid image!', 'error');
+            if (file.size > 25 * 1024 * 1024 && !confirm('Large file detected. Continue?')) return;
+
+            toggleLoader(true);
+            State.file = file;
+            State.fileName = file.name.split('.').slice(0, -1).join('.') || 'image';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    State.img = img;
+                    State.origW = img.width;
+                    State.origH = img.height;
+
+                    UI.canvas.width = State.origW;
+                    UI.canvas.height = State.origH;
+                    UI.ctx.drawImage(img, 0, 0);
+
+                    // Update UI
+                    document.getElementById('lblOrigDims').textContent = `${State.origW} x ${State.origH}`;
+                    document.getElementById('metaName').value = file.name;
+                    document.getElementById('metaType').value = file.type;
+                    document.getElementById('metaSize').value = formatBytes(file.size);
+                    document.getElementById('metaDims').value = `${State.origW} x ${State.origH}`;
+                    document.getElementById('cmpOrigSize').textContent = formatBytes(file.size);
+                    
+                    UI.rzW.value = State.origW;
+                    UI.rzH.value = State.origH;
+                    estimateCompression();
+
+                    UI.viewUpload.classList.add('hidden');
+                    UI.viewEditor.classList.remove('hidden');
+                    toggleLoader(false);
+                    showToast('Image loaded successfully!', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- TOOL SWITCHING ---
+        function switchTool(btn) {
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`panel-${btn.dataset.tool}`).classList.remove('hidden');
+            
+            // Reset Canvas
+            UI.ctx.clearRect(0,0, UI.canvas.width, UI.canvas.height);
+            UI.ctx.drawImage(State.img, 0, 0);
+            State.crop.active = false;
+            UI.previewSect.classList.add('hidden');
+        }
+
+        // --- RESIZE LOGIC ---
+        UI.rzW.addEventListener('input', () => { if(UI.rzLock.checked) { UI.rzH.value = Math.round(UI.rzW.value * (State.origH/State.origW)); syncScale(); }});
+        UI.rzH.addEventListener('input', () => { if(UI.rzLock.checked) { UI.rzW.value = Math.round(UI.rzH.value * (State.origW/State.origH)); syncScale(); }});
+        UI.rzScale.addEventListener('input', () => {
+            const f = UI.rzScale.value / 100;
+            UI.rzW.value = Math.round(State.origW * f);
+            UI.rzH.value = Math.round(State.origH * f);
+            document.getElementById('rzScaleVal').textContent = UI.rzScale.value + '%';
+        });
+        function syncScale() { document.getElementById('rzScaleVal').textContent = Math.round((UI.rzW.value/State.origW)*100) + '%'; }
+
+        // --- COMPRESS LOGIC ---
+        let debounce;
+        UI.cmpRange.addEventListener('input', () => {
+            UI.cmpVal.textContent = UI.cmpRange.value + '%';
+            clearTimeout(debounce);
+            debounce = setTimeout(estimateCompression, 200);
+        });
+        function estimateCompression() {
+            if(!State.img) return;
+            UI.canvas.toBlob(b => { if(b) UI.cmpEst.textContent = "~" + formatBytes(b.size); }, 'image/jpeg', UI.cmpRange.value/100);
+        }
+
+        // --- CROP LOGIC ---
+        function setupCropListeners() {
+            let isDrawing = false, startX, startY;
+            const getPos = (e) => {
+                const r = UI.canvas.getBoundingClientRect();
+                const sx = UI.canvas.width/r.width, sy = UI.canvas.height/r.height;
+                const cx = e.touches?e.touches[0].clientX:e.clientX, cy = e.touches?e.touches[0].clientY:e.clientY;
+                return { x: (cx-r.left)*sx, y: (cy-r.top)*sy };
+            };
+            const start = (e) => { if(document.querySelector('.nav-item.active').dataset.tool !== 'crop') return; isDrawing=true; const p=getPos(e); startX=p.x; startY=p.y; };
+            const move = (e) => {
+                if(!isDrawing) return;
+                if(e.touches) e.preventDefault();
+                const p = getPos(e);
+                const w = p.x - startX, h = p.y - startY;
+                State.crop = { active:true, x:startX, y:startY, w:w, h:h };
+                UI.ctx.clearRect(0,0, UI.canvas.width, UI.canvas.height);
+                UI.ctx.drawImage(State.img, 0, 0);
+                UI.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                UI.ctx.fillRect(0,0, UI.canvas.width, UI.canvas.height);
+                UI.ctx.clearRect(startX, startY, w, h);
+                UI.ctx.drawImage(State.img, startX, startY, w, h, startX, startY, w, h);
+                UI.ctx.strokeStyle='#fff'; UI.ctx.lineWidth=2; UI.ctx.setLineDash([6,6]); UI.ctx.strokeRect(startX,startY,w,h);
+                document.getElementById('crpW').textContent = Math.abs(Math.round(w)) + 'px';
+                document.getElementById('crpH').textContent = Math.abs(Math.round(h)) + 'px';
+            };
+            const end = () => isDrawing=false;
+            ['mousedown','touchstart'].forEach(e=>UI.canvas.addEventListener(e,start));
+            ['mousemove','touchmove'].forEach(e=>UI.canvas.addEventListener(e,move));
+            ['mouseup','touchend'].forEach(e=>UI.canvas.addEventListener(e,end));
+        }
+
+        // --- GENERATOR ---
+        const App = {
+            process: (type) => {
+                const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+                let mime='image/png', q=1.0, suf='';
+                if(type==='resize') {
+                    c.width=parseInt(UI.rzW.value); c.height=parseInt(UI.rzH.value);
+                    ctx.drawImage(State.img,0,0,c.width,c.height); suf=`resize_${c.width}w`;
+                } else if(type==='compress') {
+                    c.width=State.origW; c.height=State.origH;
+                    ctx.fillStyle='#FFF'; ctx.fillRect(0,0,c.width,c.height);
+                    ctx.drawImage(State.img,0,0); mime='image/jpeg'; q=UI.cmpRange.value/100; suf='compress';
+                } else if(type==='convert') {
+                    c.width=State.origW; c.height=State.origH;
+                    const fmt = document.getElementById('cvtFormat').value;
+                    if(fmt==='image/jpeg') { ctx.fillStyle='#FFF'; ctx.fillRect(0,0,c.width,c.height); }
+                    ctx.drawImage(State.img,0,0); mime=fmt; suf='convert';
+                } else if(type==='crop') {
+                    if(!State.crop.active || Math.abs(State.crop.w)<5) throw new Error('Select area first');
+                    c.width=Math.abs(State.crop.w); c.height=Math.abs(State.crop.h);
+                    const x = State.crop.w<0?State.crop.x+State.crop.w:State.crop.x;
+                    const y = State.crop.h<0?State.crop.y+State.crop.h:State.crop.y;
+                    ctx.drawImage(State.img, x,y,c.width,c.height, 0,0,c.width,c.height); suf='crop';
+                }
+                return { cvs:c, mime, q, suf };
+            },
+            preview: (t) => {
+                try {
+                    toggleLoader(true);
+                    setTimeout(() => {
+                        const r = App.process(t);
+                        UI.previewImg.src = r.cvs.toDataURL(r.mime, r.q);
+                        UI.previewSect.classList.remove('hidden');
+                        UI.previewSect.scrollIntoView({behavior:'smooth'});
+                        toggleLoader(false);
+                    }, 50);
+                } catch(e) { toggleLoader(false); showToast(e.message, 'error'); }
+            },
+            download: (t) => {
+                try {
+                    toggleLoader(true);
+                    setTimeout(() => {
+                        const r = App.process(t);
+                        const a = document.createElement('a');
+                        a.download = `${State.fileName}_${r.suf}.${r.mime.split('/')[1]}`;
+                        a.href = r.cvs.toDataURL(r.mime, r.q);
+                        a.click();
+                        toggleLoader(false);
+                        showToast('Downloading...', 'success');
+                    }, 50);
+                } catch(e) { toggleLoader(false); showToast(e.message, 'error'); }
+            }
+        };
+
+        function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
+        function showToast(m, t) {
+            UI.toast.className = `toast ${t} show`;
+            UI.toast.querySelector('span').textContent = m;
+            setTimeout(() => UI.toast.classList.remove('show'), 3000);
+        }
+        function formatBytes(b) { if(b===0)return'0 B'; const i=Math.floor(Math.log(b)/Math.log(1024)); return parseFloat((b/Math.pow(1024,i)).toFixed(2))+' '+['B','KB','MB','GB'][i]; }
+    </script>
+</body>
+</html>
